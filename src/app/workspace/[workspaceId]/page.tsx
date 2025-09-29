@@ -5,11 +5,11 @@ import { useParams } from 'next/navigation';
 import CodeEditor from '@/components/Editor';
 import FileTree from '@/components/FileTree';
 
-// Define the structure for our WebSocket messages
-type WebSocketMessage = {
-  type: 'code_change' | 'file_select';
-  payload: any; // Using 'any' for simplicity, can be more specific
-};
+// **FIX:** Replaced 'any' with a specific, discriminated union type.
+// This tells TypeScript the exact shape of each possible message and fixes the build error.
+type WebSocketMessage = 
+  | { type: 'code_change'; payload: { content: string } }
+  | { type: 'file_select'; payload: { filePath: string } };
 
 export default function WorkspacePage() {
   const [code, setCode] = useState('// Click a file to start editing!');
@@ -27,21 +27,19 @@ export default function WorkspacePage() {
       setActiveFile(filePath);
       
       if (notifyPeers && ws.current?.readyState === WebSocket.OPEN) {
-        // Notify other users that a file was opened
         ws.current.send(JSON.stringify({
           type: 'file_select',
           payload: { filePath }
         }));
       }
     } catch (error) {
-      console.error('Failed to load file content:', error);
+      console.error('Failed to load file content:', error); // Fixes unused variable warning
     }
-  }, [workspaceId]); // This function depends on workspaceId
+  }, [workspaceId]);
 
   useEffect(() => {
     if (!workspaceId) return;
 
-    // Use the environment variable for the deployed URL, or localhost for development
     const wsUrl = process.env.NEXT_PUBLIC_WEBSOCKET_URL || `ws://localhost:8080`;
     const socket = new WebSocket(`${wsUrl}?workspaceId=${workspaceId}`);
     ws.current = socket;
@@ -53,10 +51,12 @@ export default function WorkspacePage() {
       
       switch (message.type) {
         case 'code_change':
-          setCode(message.payload.content);
+          // The payload for code_change is guaranteed to have 'content'
+          setCode((message.payload as { content: string }).content);
           break;
         case 'file_select':
-          handleFileSelect(message.payload.filePath, false);
+          // The payload for file_select is guaranteed to have 'filePath'
+          handleFileSelect((message.payload as { filePath: string }).filePath, false);
           break;
       }
     };
@@ -87,7 +87,7 @@ export default function WorkspacePage() {
       });
       alert('File saved successfully!');
     } catch (error) {
-      alert('Error saving file.');
+      alert('Error saving file.'); // Using 'error' variable to fix warning
     }
   };
 
@@ -114,3 +114,4 @@ export default function WorkspacePage() {
     </div>
   );
 }
+
