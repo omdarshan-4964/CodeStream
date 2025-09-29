@@ -32,10 +32,10 @@ async function getFileTree(dir: string): Promise<TreeNode[]> {
     return files;
 }
 
-// **WORKAROUND:** Changed the type of 'context' to 'any' to bypass the build error.
+// **WORKAROUND REMOVED:** Use the correct type for 'context'.
 export async function GET(
     request: NextRequest,
-    context: any 
+    context: { params: { workspaceId: string } }
 ) {
     const { workspaceId } = context.params;
     const workspacePath = path.join(workspacesDir, workspaceId);
@@ -58,10 +58,10 @@ export async function GET(
     }
 }
 
-// **WORKAROUND:** Changed the type of 'context' to 'any' to bypass the build error.
+// **WORKAROUND REMOVED:** Use the correct type for 'context'.
 export async function POST(
     request: NextRequest,
-    context: any
+    context: { params: { workspaceId: string } }
 ) {
     const { workspaceId } = context.params;
     const workspacePath = path.join(workspacesDir, workspaceId);
