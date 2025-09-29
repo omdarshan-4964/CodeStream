@@ -1,12 +1,12 @@
 // // server/index.ts
 
-// import { WebSocketServer, WebSocket } from 'ws';
-// import { URL } from 'url';
+import { WebSocketServer, WebSocket } from 'ws';
+import { URL } from 'url';
 
 // server/index.ts
 
-const { WebSocketServer, WebSocket } = require('ws');
-const { URL } = require('url');
+// const { WebSocketServer, WebSocket } = require('ws');
+// const { URL } = require('url');
 
 const wss = new WebSocketServer({ port: 8080 });
 
