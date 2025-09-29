@@ -1,5 +1,6 @@
 {
   "name": "codestream",
+   "description": "Forcing a fresh install.",
   "version": "0.1.0",
   "private": true,
   "scripts": {
