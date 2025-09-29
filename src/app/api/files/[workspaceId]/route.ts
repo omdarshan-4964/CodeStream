@@ -1,15 +1,15 @@
-// src/app/api/files/[workspaceId]/route.ts
-
 import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs-extra';
 import path from 'path';
 
 const workspacesDir = path.join(process.cwd(), 'workspaces');
 
+// Type definitions for the file tree structure
 type FileNode = { type: 'file'; name: string };
 type FolderNode = { type: 'folder'; name: string; children: TreeNode[] };
 type TreeNode = FileNode | FolderNode;
 
+// Recursive function to read the directory structure
 async function getFileTree(dir: string): Promise<TreeNode[]> {
     const dirents = await fs.readdir(dir, { withFileTypes: true });
     const files = await Promise.all(
@@ -32,11 +32,9 @@ async function getFileTree(dir: string): Promise<TreeNode[]> {
     return files;
 }
 
-// **WORKAROUND REMOVED:** Use the correct type for 'context'.
-export async function GET(
-    request: NextRequest,
-    context: { params: { workspaceId: string } }
-) {
+// GET handler for listing files or reading a single file's content
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function GET(request: NextRequest, context: any) {
     const { workspaceId } = context.params;
     const workspacePath = path.join(workspacesDir, workspaceId);
     const filePath = request.nextUrl.searchParams.get('path');
@@ -58,11 +56,9 @@ export async function GET(
     }
 }
 
-// **WORKAROUND REMOVED:** Use the correct type for 'context'.
-export async function POST(
-    request: NextRequest,
-    context: { params: { workspaceId: string } }
-) {
+// POST handler for writing content to a file
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function POST(request: NextRequest, context: any) {
     const { workspaceId } = context.params;
     const workspacePath = path.join(workspacesDir, workspaceId);
 

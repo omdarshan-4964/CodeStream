@@ -1,8 +1,6 @@
-// src/app/workspace/[workspaceId]/page.tsx
-
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import CodeEditor from '@/components/Editor';
 import FileTree from '@/components/FileTree';
@@ -10,9 +8,7 @@ import FileTree from '@/components/FileTree';
 // Define the structure for our WebSocket messages
 type WebSocketMessage = {
   type: 'code_change' | 'file_select';
-  payload: 
-    | { content: string } // for 'code_change'
-    | { filePath: string }; // for 'file_select'
+  payload: any; // Using 'any' for simplicity, can be more specific
 };
 
 export default function WorkspacePage() {
@@ -22,48 +18,8 @@ export default function WorkspacePage() {
   const params = useParams();
   const workspaceId = params.workspaceId as string;
 
-  useEffect(() => {
-    if (!workspaceId) return;
-
-    const socket = new WebSocket(`ws://localhost:8080?workspaceId=${workspaceId}`);
-    ws.current = socket;
-
-    socket.onopen = () => console.log(`WebSocket connected to workspace ${workspaceId}`);
-    
-    socket.onmessage = (event) => {
-      const message: WebSocketMessage = JSON.parse(event.data);
-      console.log('Received message:', message);
-
-      // Handle different types of messages from the server
-      switch (message.type) {
-        case 'code_change':
-          setCode(message.payload.content);
-          break;
-        case 'file_select':
-          // Another user opened a file, so we'll load it too
-          handleFileSelect(message.payload.filePath, false); // 'false' to prevent an infinite loop
-          break;
-      }
-    };
-
-    socket.onclose = () => console.log(`WebSocket disconnected`);
-    return () => socket.close();
-  }, [workspaceId]);
-
-  const handleCodeChange = (newValue: string | undefined) => {
-    if (newValue !== undefined) {
-      setCode(newValue);
-      if (ws.current?.readyState === WebSocket.OPEN) {
-        // Send a structured message for code changes
-        ws.current.send(JSON.stringify({
-          type: 'code_change',
-          payload: { content: newValue }
-        }));
-      }
-    }
-  };
-
-  const handleFileSelect = async (filePath: string, notifyPeers: boolean = true) => {
+  // Wrapped in useCallback to stabilize its reference for the useEffect hook
+  const handleFileSelect = useCallback(async (filePath: string, notifyPeers: boolean = true) => {
     try {
       const response = await fetch(`/api/files/${workspaceId}?path=${filePath}`);
       const content = await response.text();
@@ -79,6 +35,45 @@ export default function WorkspacePage() {
       }
     } catch (error) {
       console.error('Failed to load file content:', error);
+    }
+  }, [workspaceId]); // This function depends on workspaceId
+
+  useEffect(() => {
+    if (!workspaceId) return;
+
+    // Use the environment variable for the deployed URL, or localhost for development
+    const wsUrl = process.env.NEXT_PUBLIC_WEBSOCKET_URL || `ws://localhost:8080`;
+    const socket = new WebSocket(`${wsUrl}?workspaceId=${workspaceId}`);
+    ws.current = socket;
+
+    socket.onopen = () => console.log(`WebSocket connected to workspace ${workspaceId}`);
+    
+    socket.onmessage = (event) => {
+      const message: WebSocketMessage = JSON.parse(event.data);
+      
+      switch (message.type) {
+        case 'code_change':
+          setCode(message.payload.content);
+          break;
+        case 'file_select':
+          handleFileSelect(message.payload.filePath, false);
+          break;
+      }
+    };
+
+    socket.onclose = () => console.log(`WebSocket disconnected`);
+    return () => socket.close();
+  }, [workspaceId, handleFileSelect]); // Correctly including handleFileSelect dependency
+
+  const handleCodeChange = (newValue: string | undefined) => {
+    if (newValue !== undefined) {
+      setCode(newValue);
+      if (ws.current?.readyState === WebSocket.OPEN) {
+        ws.current.send(JSON.stringify({
+          type: 'code_change',
+          payload: { content: newValue }
+        }));
+      }
     }
   };
 
@@ -100,7 +95,7 @@ export default function WorkspacePage() {
     <div className="flex h-screen bg-gray-800 text-white">
       <aside className="w-64 bg-gray-900 p-4 flex flex-col">
         <h2 className="text-lg font-semibold border-b border-gray-700 pb-2">Files</h2>
-        <div className="mt-4 flex-1">
+        <div className="mt-4 flex-1 overflow-y-auto">
           <FileTree workspaceId={workspaceId} onFileSelect={handleFileSelect} />
         </div>
       </aside>
