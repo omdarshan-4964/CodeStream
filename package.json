@@ -3,7 +3,7 @@
   "description": "Forcing a fresh install.",
   "version": "0.1.0",
   "engines": {
-    "node": "22.x"
+    "node": ">=18"
   },
   "private": true,
   "scripts": {

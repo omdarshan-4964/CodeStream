@@ -3,7 +3,6 @@ import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
-// **THE FIX:** This line tells Vercel to treat this as a dynamic API route.
 export const dynamic = 'force-dynamic';
 
 const prisma = new PrismaClient();
@@ -32,10 +31,8 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json({ token });
-
   } catch (error) {
     console.error('Login Error:', error);
     return NextResponse.json({ error: 'An internal server error occurred.' }, { status: 500 });
   }
 }
-

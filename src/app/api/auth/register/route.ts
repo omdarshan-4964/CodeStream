@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
-// **THE FIX:** This line tells Vercel to treat this as a dynamic API route.
 export const dynamic = 'force-dynamic';
 
 const prisma = new PrismaClient();
@@ -26,24 +25,20 @@ export async function POST(request: Request) {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await prisma.user.create({
-      data: {
-        email,
-        password: hashedPassword,
-      },
+      data: { email, password: hashedPassword },
     });
 
-    const userToReturn = {
-      id: user.id,
-      email: user.email,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-    };
-
-    return NextResponse.json(userToReturn, { status: 201 });
-
+    return NextResponse.json(
+      {
+        id: user.id,
+        email: user.email,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+      },
+      { status: 201 }
+    );
   } catch (error) {
     console.error('Registration Error:', error);
     return NextResponse.json({ error: 'An internal server error occurred.' }, { status: 500 });
   }
 }
-
