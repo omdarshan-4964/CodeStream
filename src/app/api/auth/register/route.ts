@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
+// **THE FIX:** This line tells Vercel to treat this as a dynamic API route.
 export const dynamic = 'force-dynamic';
 
 const prisma = new PrismaClient();
@@ -31,7 +32,6 @@ export async function POST(request: Request) {
       },
     });
 
-    // **FIX:** Select the properties you want to return to avoid the unused variable warning.
     const userToReturn = {
       id: user.id,
       email: user.email,

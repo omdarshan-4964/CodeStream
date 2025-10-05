@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 
+// **THE FIX:** This line tells Vercel to treat this as a dynamic API route.
 export const dynamic = 'force-dynamic';
 
 const prisma = new PrismaClient();
@@ -84,3 +85,4 @@ export async function POST(
         return NextResponse.json({ error: 'Failed to save file.' }, { status: 500 });
     }
 }
+
