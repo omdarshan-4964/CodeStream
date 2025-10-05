@@ -5,65 +5,70 @@ import { useParams } from 'next/navigation';
 import CodeEditor from '@/components/Editor';
 import FileTree from '@/components/FileTree';
 
-// **FIX:** Replaced 'any' with a specific, discriminated union type.
-// This tells TypeScript the exact shape of each possible message and fixes the build error.
-type WebSocketMessage = 
+// Define the precise structure for WebSocket messages
+type WebSocketMessage =
   | { type: 'code_change'; payload: { content: string } }
-  | { type: 'file_select'; payload: { filePath: string } };
+  | { type: 'file_select'; payload: { fileId: string; fileName: string } };
 
 export default function WorkspacePage() {
   const [code, setCode] = useState('// Click a file to start editing!');
-  const [activeFile, setActiveFile] = useState<string | null>(null);
+  // The active file state now stores both the ID and the name
+  const [activeFile, setActiveFile] = useState<{ id: string; name: string } | null>(null);
   const ws = useRef<WebSocket | null>(null);
   const params = useParams();
   const workspaceId = params.workspaceId as string;
 
-  // Wrapped in useCallback to stabilize its reference for the useEffect hook
-  const handleFileSelect = useCallback(async (filePath: string, notifyPeers: boolean = true) => {
+  // This function is now wrapped in useCallback for stability in useEffect
+  const handleFileSelect = useCallback(async (fileId: string, fileName: string, notifyPeers: boolean = true) => {
     try {
-      const response = await fetch(`/api/files/${workspaceId}?path=${filePath}`);
+      // Fetch file content using the database fileId
+      const response = await fetch(`/api/files/${workspaceId}?fileId=${fileId}`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch file: ${response.statusText}`);
+      }
       const content = await response.text();
       setCode(content);
-      setActiveFile(filePath);
-      
+      setActiveFile({ id: fileId, name: fileName });
+
+      // Notify other users in the same room that a file was selected
       if (notifyPeers && ws.current?.readyState === WebSocket.OPEN) {
         ws.current.send(JSON.stringify({
           type: 'file_select',
-          payload: { filePath }
+          payload: { fileId, fileName }
         }));
       }
     } catch (error) {
-      console.error('Failed to load file content:', error); // Fixes unused variable warning
+      console.error('Failed to load file content:', error);
     }
   }, [workspaceId]);
 
   useEffect(() => {
     if (!workspaceId) return;
 
+    // Use the environment variable for the deployed URL, with a fallback for local development
     const wsUrl = process.env.NEXT_PUBLIC_WEBSOCKET_URL || `ws://localhost:8080`;
     const socket = new WebSocket(`${wsUrl}?workspaceId=${workspaceId}`);
     ws.current = socket;
 
     socket.onopen = () => console.log(`WebSocket connected to workspace ${workspaceId}`);
-    
+
     socket.onmessage = (event) => {
       const message: WebSocketMessage = JSON.parse(event.data);
       
       switch (message.type) {
         case 'code_change':
-          // The payload for code_change is guaranteed to have 'content'
-          setCode((message.payload as { content: string }).content);
+          setCode(message.payload.content);
           break;
         case 'file_select':
-          // The payload for file_select is guaranteed to have 'filePath'
-          handleFileSelect((message.payload as { filePath: string }).filePath, false);
+          // When another user selects a file, we load it too
+          handleFileSelect(message.payload.fileId, message.payload.fileName, false);
           break;
       }
     };
 
     socket.onclose = () => console.log(`WebSocket disconnected`);
     return () => socket.close();
-  }, [workspaceId, handleFileSelect]); // Correctly including handleFileSelect dependency
+  }, [workspaceId, handleFileSelect]); // The dependency array is now correct
 
   const handleCodeChange = (newValue: string | undefined) => {
     if (newValue !== undefined) {
@@ -83,11 +88,12 @@ export default function WorkspacePage() {
       await fetch(`/api/files/${workspaceId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filePath: activeFile, content: code }),
+        // Send the database fileId in the request body
+        body: JSON.stringify({ fileId: activeFile.id, content: code }),
       });
       alert('File saved successfully!');
     } catch (error) {
-      alert('Error saving file.'); // Using 'error' variable to fix warning
+      alert('Error saving file.');
     }
   };
 
@@ -102,7 +108,8 @@ export default function WorkspacePage() {
 
       <main className="flex-1 flex flex-col">
         <header className="bg-gray-900 border-b border-gray-700 p-2 flex justify-between items-center">
-          <p>{activeFile || 'No file selected'}</p>
+          {/* Display the file name from the activeFile state object */}
+          <p>{activeFile?.name || 'No file selected'}</p>
           <button onClick={handleSave} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded">
             Save
           </button>

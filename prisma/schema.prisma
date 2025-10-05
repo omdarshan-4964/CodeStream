@@ -31,4 +31,18 @@ model Workspace {
   // Relation: A workspace belongs to one user
   ownerId String
   owner   User   @relation(fields: [ownerId], references: [id])
+
+  files File[]
+}
+
+model File {
+  id          String    @id @default(cuid())
+  name        String
+  content     String    @db.Text // Use Text for potentially long file content
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // RELATION: A file belongs to one workspace
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
 }

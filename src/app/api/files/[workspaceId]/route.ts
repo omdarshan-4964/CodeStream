@@ -1,53 +1,51 @@
 import { NextRequest, NextResponse } from 'next/server';
-import fs from 'fs-extra';
-import path from 'path';
+import { PrismaClient } from '@prisma/client';
 
-const workspacesDir = path.join(process.cwd(), 'workspaces');
+const prisma = new PrismaClient();
 
-// Type definitions for the file tree structure
-type FileNode = { type: 'file'; name: string };
-type FolderNode = { type: 'folder'; name: string; children: TreeNode[] };
-type TreeNode = FileNode | FolderNode;
-
-// Recursive function to read the directory structure
-async function getFileTree(dir: string): Promise<TreeNode[]> {
-    const dirents = await fs.readdir(dir, { withFileTypes: true });
-    const files = await Promise.all(
-        dirents.map(async (dirent): Promise<TreeNode> => {
-            const res = path.resolve(dir, dirent.name);
-            if (dirent.isDirectory()) {
-                return {
-                    type: 'folder',
-                    name: dirent.name,
-                    children: await getFileTree(res),
-                };
-            } else {
-                return {
-                    type: 'file',
-                    name: dirent.name,
-                };
-            }
-        })
-    );
-    return files;
-}
-
-// GET handler for listing files or reading a single file's content
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function GET(request: NextRequest, context: any) {
-    const { workspaceId } = context.params;
-    const workspacePath = path.join(workspacesDir, workspaceId);
-    const filePath = request.nextUrl.searchParams.get('path');
+// GET handler: Reads file tree or a single file's content from the database
+export async function GET(request: NextRequest, { params }: { params: { workspaceId: string } }) {
+    // The 'workspaceId' from the URL is actually the workspace NAME.
+    const workspaceName = params.workspaceId;
+    const fileId = request.nextUrl.searchParams.get('fileId');
 
     try {
-        await fs.ensureDir(workspacePath);
+        // First, find the workspace by its NAME to get its actual database ID.
+        const workspace = await prisma.workspace.findFirst({
+            where: { name: workspaceName },
+        });
 
-        if (filePath) {
-            const fullPath = path.join(workspacePath, filePath);
-            const content = await fs.readFile(fullPath, 'utf8');
-            return new NextResponse(content, { headers: { 'Content-Type': 'text/plain' } });
+        // If the workspace doesn't exist, we can't find any files.
+        if (!workspace) {
+            // Return an empty array if workspace is not found, so the frontend shows an empty list.
+            return NextResponse.json([], { status: 200 }); 
+        }
+
+        if (fileId) {
+            // If a fileId is provided, fetch that single file's content
+            const file = await prisma.file.findUnique({
+                where: { id: fileId, workspaceId: workspace.id }, // Use the found workspace.id
+            });
+
+            if (!file) {
+                return NextResponse.json({ error: 'File not found.' }, { status: 404 });
+            }
+            return new NextResponse(file.content, { headers: { 'Content-Type': 'text/plain' } });
+
         } else {
-            const fileTree = await getFileTree(workspacePath);
+            // Otherwise, fetch the list of files for the workspace using the found ID
+            const files = await prisma.file.findMany({
+                where: { workspaceId: workspace.id }, // Use the found workspace.id
+                select: { id: true, name: true },
+            });
+
+            // Format the data to match what the frontend FileTree component expects
+            const fileTree = files.map(file => ({
+                id: file.id,
+                type: 'file',
+                name: file.name,
+            }));
+
             return NextResponse.json(fileTree);
         }
     } catch (error) {
@@ -56,24 +54,36 @@ export async function GET(request: NextRequest, context: any) {
     }
 }
 
-// POST handler for writing content to a file
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function POST(request: NextRequest, context: any) {
-    const { workspaceId } = context.params;
-    const workspacePath = path.join(workspacesDir, workspaceId);
+// POST handler: Saves file content to the database
+export async function POST(request: NextRequest, { params }: { params: { workspaceId: string } }) {
+    // The 'workspaceId' from the URL is the workspace NAME.
+    const workspaceName = params.workspaceId;
 
     try {
-        const { filePath, content } = await request.json();
-        if (!filePath || content === undefined) {
-            return NextResponse.json({ error: 'File path and content are required.' }, { status: 400 });
+        // Find the workspace by its NAME to get its ID for the database query.
+        const workspace = await prisma.workspace.findFirst({
+            where: { name: workspaceName },
+        });
+
+        if (!workspace) {
+            return NextResponse.json({ error: 'Workspace not found.' }, { status: 404 });
         }
-        
-        const fullPath = path.join(workspacePath, filePath);
-        await fs.writeFile(fullPath, content);
-        
+
+        const { fileId, content } = await request.json();
+        if (!fileId || content === undefined) {
+            return NextResponse.json({ error: 'File ID and content are required.' }, { status: 400 });
+        }
+
+        // Use the found workspace.id to ensure the file belongs to the correct workspace
+        await prisma.file.update({
+            where: { id: fileId, workspaceId: workspace.id }, 
+            data: { content: content },
+        });
+
         return NextResponse.json({ message: 'File saved successfully.' });
     } catch (error) {
         console.error('API POST Error:', error);
         return NextResponse.json({ error: 'Failed to save file.' }, { status: 500 });
     }
 }
+
