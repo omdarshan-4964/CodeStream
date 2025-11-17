@@ -3,9 +3,10 @@
 
 // Editor Imports
 import { java } from "@codemirror/lang-java"
-
 import { githubDark } from "@uiw/codemirror-theme-github";
 import CodeMirror from "@uiw/react-codemirror";
+import { Bot } from "lucide-react";
+import { ChatAssistant } from "@/app/components/ChatAssistant";
 
 // React & Next.js Imports
 import { useEffect, useState } from "react";
@@ -40,6 +41,7 @@ export default function RoomClient({ roomId, session }: RoomClientProps) {
 
   // Socket.IO state
   const [socket, setSocket] = useState<Socket | null>(null);
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   // Effect 1: Setup Socket.IO
   useEffect(() => {
@@ -74,7 +76,6 @@ export default function RoomClient({ roomId, session }: RoomClientProps) {
     }
   };
 
-  // --- THIS IS THE NEW FUNCTION ---
   const handleRunCode = async () => {
     setIsLoading(true);
     setOutput("Running code...");
@@ -142,32 +143,41 @@ export default function RoomClient({ roomId, session }: RoomClientProps) {
 
       {/* 2. Main Area (Editor + I/O) */}
       <main className="w-4/5 flex flex-col">
+      <ChatAssistant
+        isOpen={isChatOpen}
+        onOpenChange={setIsChatOpen}
+        currentCode={code}
+    />
         {/* Top bar for language/theme */}
+        {/* ... inside <main> ... */}
+{/* Top bar for language/theme */}
         <div className="flex justify-between items-center p-2 bg-gray-800 text-white border-b border-gray-700">
-          <div>
-            <label htmlFor="language" className="mr-2">
-              Language:
-            </label>
-            <select
-              id="language"
-              className="bg-gray-700 p-1 rounded"
-              value={language}
-              onChange={(e) => setLanguage(e.target.value)}
-              disabled={isLoading}
+        <div>
+            {/* ... language dropdown ... */}
+        </div>
+
+        {/* --- ADD THIS BUTTON --- */}
+        <div className="flex space-x-2">
+            <button
+            className="flex items-center space-x-1 p-2 rounded px-4 bg-blue-600 hover:bg-blue-700"
+            onClick={() => setIsChatOpen(true)}
             >
-              <option value="java">Java</option>
-              <option value="javascript">JavaScript</option>
-              <option value="python">Python</option>
-            </select>
-          </div>
-          <button
+            <Bot size={16} />
+            <span>Gemini Assistant</span>
+            </button>
+            <button
             className="bg-green-600 hover:bg-green-700 p-2 rounded px-4 disabled:bg-gray-500"
             onClick={handleRunCode}
             disabled={isLoading}
-          >
+            >
             {isLoading ? "Running..." : "Run Code"}
-          </button>
+            </button>
         </div>
+        {/* --- END OF ADDITION --- */}
+
+        </div>
+
+        
 
         {/* Editor Area */}
         <div className="flex-grow bg-gray-800 text-white overflow-hidden">
