@@ -79,7 +79,7 @@ export default async function RoomPage({ params }: RoomPageProps) {
         <div className="flex-grow bg-gray-800 text-white p-4">
           <div className="bg-black h-full w-full rounded p-2">
             <div className="flex-grow bg-gray-800 text-white overflow-hidden">
-                <Editor />
+                <Editor roomId={params.roomId} />
             </div>
           </div>
         </div>
