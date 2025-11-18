@@ -1,4 +1,5 @@
-// prisma/schema.prisma
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
   provider = "prisma-client-js"
@@ -6,43 +7,67 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url      = env("DATABASE_URL") // This loads the URL from your .env file
 }
 
-// User model for authentication
+// Schema for NextAuth.js
+model Account {
+  id                       String  @id @default(cuid())
+  userId                   String
+  type                     String
+  provider                 String
+  providerAccountId        String
+  refresh_token            String? @db.Text
+  access_token             String? @db.Text
+  expires_at               Int?
+  token_type               String?
+  scope                    String?
+  id_token                 String? @db.Text
+  session_state            String?
+  user                     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String   // We will store a hashed password
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  accounts      Account[]
+  sessions      Session[]
 
-  // Relation: A user can own multiple workspaces
-  workspaces Workspace[]
+  ownedRooms    Room[]    @relation("OwnedRooms")
+  rooms         Room[]    @relation("ParticipatingRooms")
 }
 
-// Workspace model for collaborative projects
-model Workspace {
-  id        String   @id @default(cuid())
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Room {
+  id        String    @id @default(cuid())
   name      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
-  // Relation: A workspace belongs to one user
-  ownerId String
-  owner   User   @relation(fields: [ownerId], references: [id])
+  // A room has one owner (a User)
+  ownerId   String
+  owner     User      @relation("OwnedRooms", fields: [ownerId], references: [id], onDelete: Cascade)
 
-  files File[]
-}
-
-model File {
-  id          String    @id @default(cuid())
-  name        String
-  content     String    @db.Text // Use Text for potentially long file content
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  // RELATION: A file belongs to one workspace
-  workspaceId String
-  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  // A room can have many participants (Users)
+  participants User[]   @relation("ParticipatingRooms")
 }

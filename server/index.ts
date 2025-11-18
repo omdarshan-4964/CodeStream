@@ -1,67 +1,75 @@
-// // server/index.ts
-
-import { WebSocketServer, WebSocket } from 'ws';
-import { URL } from 'url';
-
 // server/index.ts
 
-// const { WebSocketServer, WebSocket } = require('ws');
-// const { URL } = require('url');
+import express from 'express';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
+import cors from 'cors';
 
-const wss = new WebSocketServer({ port: 8080 });
+// --- Define a type for our user ---
+interface TeamMember {
+  id: string; // The socket.id
+  username: string;
+}
 
-// A Map to store clients based on their workspaceId
-// Key: workspaceId (string), Value: Set of connected WebSockets
-const rooms = new Map<string, Set<WebSocket>>();
+const app = express();
+app.use(cors());
 
-console.log('WebSocket server started on port 8080');
+const httpServer = createServer(app);
+const io = new Server(httpServer, {
+  cors: {
+    origin: "http://localhost:3000",
+    methods: ["GET", "POST"],
+  },
+});
 
-wss.on('connection', (ws, req) => {
-  // Extract workspaceId from the connection URL, e.g., ws://localhost:8080?workspaceId=123
-  const url = new URL(req.url!, `http://${req.headers.host}`);
-  const workspaceId = url.searchParams.get('workspaceId');
+// --- THIS IS THE MAIN CHANGE ---
+// We now store a list of TeamMember objects for each room
+const roomOccupants = new Map<string, TeamMember[]>();
 
-  if (!workspaceId) {
-    console.log('Connection rejected: No workspaceId provided.');
-    ws.close();
-    return;
-  }
+io.on('connection', (socket) => {
+  console.log(`Socket connected: ${socket.id}`);
 
-  // If the room doesn't exist, create it
-  if (!rooms.has(workspaceId)) {
-    rooms.set(workspaceId, new Set());
-  }
+  // --- UPDATED EVENT ---
+  // We now expect a 'username' when joining
+  socket.on('join-room', (roomId: string, username: string) => {
+    socket.join(roomId);
 
-  // Add the new client to the room
-  rooms.get(workspaceId)!.add(ws);
-  console.log(`Client connected to workspace: ${workspaceId}`);
+    const newUser: TeamMember = { id: socket.id, username: username };
+    const members = roomOccupants.get(roomId) || [];
+    members.push(newUser);
+    roomOccupants.set(roomId, members);
 
-  ws.on('message', (message) => {
-    const room = rooms.get(workspaceId);
-    if (room) {
-      // Broadcast the message ONLY to other clients in the same room
-      room.forEach((client) => {
-        if (client !== ws && client.readyState === WebSocket.OPEN) {
-          client.send(message.toString());
-        }
-      });
-    }
+    console.log(`Socket ${socket.id} (${username}) joined room ${roomId}`);
+
+    // --- NEW EVENT NAME ---
+    // Tell EVERYONE in the room (including sender) the new team list
+    io.in(roomId).emit('update-team-list', members);
   });
 
-  ws.on('close', () => {
-    const room = rooms.get(workspaceId);
-    if (room) {
-      // Remove the client from the room when they disconnect
-      room.delete(ws);
-      console.log(`Client disconnected from workspace: ${workspaceId}`);
-      // If the room is empty, delete it to save memory
-      if (room.size === 0) {
-        rooms.delete(workspaceId);
+  socket.on('code-change', (roomId: string, newCode: string) => {
+    socket.to(roomId).emit('receive-code', newCode);
+  });
+
+  // --- UPDATED DISCONNECT LOGIC ---
+  socket.on('disconnect', () => {
+    console.log(`Socket disconnected: ${socket.id}`);
+    // Clean up from roomOccupants map
+    roomOccupants.forEach((members, roomId) => {
+      // Find the index of the disconnected user
+      const index = members.findIndex((member) => member.id === socket.id);
+
+      if (index > -1) {
+        members.splice(index, 1); // Remove them from the list
+        roomOccupants.set(roomId, members);
+
+        // Tell everyone in that room the new list
+        io.in(roomId).emit('update-team-list', members);
       }
-    }
+    });
   });
+});
 
-  ws.on('error', (error) => {
-    console.error('WebSocket error:', error);
-  });
+const PORT = 5000;
+httpServer.listen(PORT, () => {
+  console.log(`Socket.IO server running on http://localhost:${PORT}`);
 });
