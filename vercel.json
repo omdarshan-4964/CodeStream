@@ -1,39 +1,11 @@
 {
   "buildCommand": "npm run build",
-  "devCommand": "npm run dev",
-  "installCommand": "npm install",
-  "env": {
-    "NEXTAUTH_SECRET": {
-      "description": "Secret key for NextAuth.js session encryption",
-      "required": true
-    },
-    "NEXTAUTH_URL": {
-      "description": "The URL of your NextAuth application (e.g., https://codestream.vercel.app)",
-      "required": true
-    },
-    "GOOGLE_CLIENT_ID": {
-      "description": "Google OAuth Client ID",
-      "required": true
-    },
-    "GOOGLE_CLIENT_SECRET": {
-      "description": "Google OAuth Client Secret",
-      "required": true
-    },
-    "DATABASE_URL": {
-      "description": "PostgreSQL database URL from Render",
-      "required": true
-    },
-    "GEMINI_API_KEY": {
-      "description": "Google Generative AI API Key",
-      "required": true
+  "outputDirectory": ".next",
+  "framework": "nextjs",
+  "rewrites": [
+    {
+      "source": "/api/socket",
+      "destination": "https://codestream-socket-server.onrender.com/socket.io/"
     }
-  },
-  "git": {
-    "deploymentEnabled": {
-      "main": true,
-      "v2-main": true
-    }
-  },
-  "skipBuildCache": false,
-  "regions": ["iad1"]
+  ]
 }
