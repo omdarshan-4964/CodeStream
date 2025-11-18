@@ -6,6 +6,7 @@ type ToasterToast = {
   id: string
   title?: React.ReactNode
   description?: React.ReactNode
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   action?: React.ReactElement<any>
   open?: boolean
   onOpenChange?: (open: boolean) => void
