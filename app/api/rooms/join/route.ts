@@ -1,19 +1,11 @@
-// app/api/rooms/[roomId]/join/route.ts
+// app/api/rooms/join/route.ts
 import { getAuthSession } from "@/lib/auth";
 import { PrismaClient } from "@prisma/client";
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 
 const prisma = new PrismaClient();
 
-// Fix for Next.js 15 dynamic route params
-// We must type the context correctly
-interface Context {
-  params: {
-    roomId: string;
-  };
-}
-
-export async function POST(req: Request, context: Context) {
+export async function POST(req: NextRequest) {
   const session = await getAuthSession();
 
   // 1. Check authentication
@@ -22,9 +14,7 @@ export async function POST(req: Request, context: Context) {
   }
 
   try {
-    // In Next.js 15, params is not a Promise in API routes, but treating it as one
-    // or accessing it directly from context is the safest way to handle the types.
-    const { roomId } = context.params;
+    const { roomId } = await req.json();
 
     if (!roomId) {
       return new NextResponse("Room ID is required", { status: 400 });

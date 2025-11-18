@@ -6,7 +6,7 @@ import { Providers } from "./providers";
 import { getAuthSession } from "@/lib/auth";
 import { SignInButton } from "./components/SignInButton";
 import { UserNav } from "./components/UserNav";
-import { Toaster } from "@/components/ui/toaster"; 
+import { Toaster } from "@/components/ui/toaster";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -20,7 +20,14 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = await getAuthSession();
+  // Safely attempt to get the session.
+  // During build time, this might fail or return null, which is fine.
+  let session = null;
+  try {
+    session = await getAuthSession();
+  } catch (error) {
+    console.warn("Could not fetch session in RootLayout (this is expected during build):", error);
+  }
 
   return (
     <html lang="en" suppressHydrationWarning>
@@ -28,7 +35,7 @@ export default async function RootLayout({
         <Providers>
           <div className="min-h-screen flex flex-col">
             {/* Simple Header */}
-            <header className="w-full border-b">
+            <header className="w-full border-b bg-background">
               <div className="container mx-auto flex h-16 items-center justify-between p-4">
                 <div className="font-bold text-lg">CodeStream v2</div>
                 
@@ -48,7 +55,7 @@ export default async function RootLayout({
             <main className="flex-grow">{children}</main>
           </div>
         </Providers>
-        <Toaster /> {/* <-- ADD THE TOASTER COMPONENT HERE */}
+        <Toaster />
       </body>
     </html>
   );
