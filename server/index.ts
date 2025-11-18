@@ -5,63 +5,70 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
 
-// 1. Setup the server
+// --- Define a type for our user ---
+interface TeamMember {
+  id: string; // The socket.id
+  username: string;
+}
+
 const app = express();
-app.use(cors()); // Allow requests from your Next.js app
+app.use(cors());
 
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
-    origin: "http://localhost:3000", // Your Next.js app URL
+    origin: "http://localhost:3000",
     methods: ["GET", "POST"],
   },
 });
 
-// A simple map to store which users are in which rooms
-const roomOccupants = new Map<string, string[]>();
+// --- THIS IS THE MAIN CHANGE ---
+// We now store a list of TeamMember objects for each room
+const roomOccupants = new Map<string, TeamMember[]>();
 
-// 2. Define Socket.IO events
 io.on('connection', (socket) => {
   console.log(`Socket connected: ${socket.id}`);
 
-  // Event: When a user joins a room
-  socket.on('join-room', (roomId: string) => {
+  // --- UPDATED EVENT ---
+  // We now expect a 'username' when joining
+  socket.on('join-room', (roomId: string, username: string) => {
     socket.join(roomId);
-    
-    // Add user to our occupants map (we'll use socket.id for now)
-    const occupants = roomOccupants.get(roomId) || [];
-    occupants.push(socket.id);
-    roomOccupants.set(roomId, occupants);
 
-    console.log(`Socket ${socket.id} joined room ${roomId}`);
-    
-    // Tell EVERYONE in the room (including sender) who is in there
-    io.in(roomId).emit('update-occupants', occupants);
+    const newUser: TeamMember = { id: socket.id, username: username };
+    const members = roomOccupants.get(roomId) || [];
+    members.push(newUser);
+    roomOccupants.set(roomId, members);
+
+    console.log(`Socket ${socket.id} (${username}) joined room ${roomId}`);
+
+    // --- NEW EVENT NAME ---
+    // Tell EVERYONE in the room (including sender) the new team list
+    io.in(roomId).emit('update-team-list', members);
   });
 
-  // Event: When a user changes the code
   socket.on('code-change', (roomId: string, newCode: string) => {
-    // Broadcast the change to EVERYONE ELSE in the room
     socket.to(roomId).emit('receive-code', newCode);
   });
 
-  // Event: When a user disconnects
+  // --- UPDATED DISCONNECT LOGIC ---
   socket.on('disconnect', () => {
     console.log(`Socket disconnected: ${socket.id}`);
     // Clean up from roomOccupants map
-    roomOccupants.forEach((occupants, roomId) => {
-      const index = occupants.indexOf(socket.id);
+    roomOccupants.forEach((members, roomId) => {
+      // Find the index of the disconnected user
+      const index = members.findIndex((member) => member.id === socket.id);
+
       if (index > -1) {
-        occupants.splice(index, 1);
-        roomOccupants.set(roomId, occupants);
-        // Tell everyone the user left
-        io.in(roomId).emit('update-occupants', occupants);
+        members.splice(index, 1); // Remove them from the list
+        roomOccupants.set(roomId, members);
+
+        // Tell everyone in that room the new list
+        io.in(roomId).emit('update-team-list', members);
       }
     });
   });
 });
 
-// 3. Start the server
 const PORT = 5000;
 httpServer.listen(PORT, () => {
   console.log(`Socket.IO server running on http://localhost:${PORT}`);

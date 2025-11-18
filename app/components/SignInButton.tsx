@@ -8,7 +8,7 @@ export function SignInButton() {
   return (
     <Button
       variant="secondary"
-      onClick={() => signIn("google", { callbackUrl: "/" })}
+      onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
     >
       Sign in with Google
     </Button>

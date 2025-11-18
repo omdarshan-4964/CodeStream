@@ -108,14 +108,14 @@ export function ChatAssistant({
           <SheetTitle>🤖 Gemini Assistant</SheetTitle>
         </SheetHeader>
         <ScrollArea className="flex-grow pr-4">
-          <div className="space-y-4">
+          <div className="space-y-4 flex flex-col">
             {messages.map((msg, index) => (
               <div
                 key={index}
-                className={`p-3 rounded-lg ${
+                className={`p-3 rounded-lg max-w-[80%] ${
                   msg.role === "user"
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-700 text-white"
+                    ? "bg-blue-600 text-white ml-auto"
+                    : "bg-slate-700 text-white mr-auto"
                 }`}
               >
                 {/* We apply whitespace formatting to render newlines */}

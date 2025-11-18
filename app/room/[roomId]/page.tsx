@@ -1,33 +1,73 @@
 // app/room/[roomId]/page.tsx
-
 import { getAuthSession } from "@/lib/auth";
-import RoomClient from "./RoomClient"; // Import our new component
+import RoomClient from "./RoomClient";
 import { redirect } from "next/navigation";
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
 
 interface RoomPageProps {
-  params: {
+  params: Promise<{
     roomId: string;
-  };
+  }>;
 }
 
-// This is now a simple, fast Server Component
 export default async function RoomPage({ params }: RoomPageProps) {
-  // `params` may be a Promise in some Next.js runtime cases (RSC). Await it to be robust.
-  const resolvedParams = (await params) as { roomId: string };
+  // Resolve params which may be a Promise
+  const resolvedParams = await params;
+  const { roomId } = resolvedParams;
 
+  // 1. Get authenticated session
   const session = await getAuthSession();
 
-  // 1. Protect the page
-  if (!session?.user) {
-    // You can customize this
+  // 2. Protect the page - only authenticated users can access
+  if (!session?.user?.id) {
     redirect("/api/auth/signin");
   }
 
-  // 2. TODO: Fetch room data from Prisma
-  // We should verify the user is allowed to be in this room.
-  // For now, we'll just pass the data.
+  // 3. CRITICAL: Verify the room exists and user is authorized
+  // Also attempt to add user as participant if not already
+  let room;
+  try {
+    room = await prisma.room.findUnique({
+      where: { id: roomId },
+      include: { participants: true, owner: true },
+    });
+  } catch (error) {
+    console.error("Error fetching room:", error);
+    redirect("/");
+  }
 
-  // 3. Render the Client Component
-  // We pass the data (roomId and session) as props
-  return <RoomClient roomId={resolvedParams.roomId} session={session} />;
+  // Room doesn't exist
+  if (!room) {
+    redirect("/");
+  }
+
+  // Check if user is either the owner or a participant
+  const isOwner = room.owner.id === session.user.id;
+  const isParticipant = room.participants.some(
+    (p) => p.id === session.user.id
+  );
+
+  // If not owner and not participant, try to add them
+  if (!isOwner && !isParticipant) {
+    try {
+      // Add user as a participant
+      await prisma.room.update({
+        where: { id: roomId },
+        data: {
+          participants: {
+            connect: { id: session.user.id },
+          },
+        },
+      });
+    } catch (error) {
+      console.error("Error adding participant:", error);
+      // If we can't add them, deny access
+      redirect("/");
+    }
+  }
+
+  // 4. Render the Client Component with data
+  return <RoomClient roomId={roomId} session={session} />;
 }
