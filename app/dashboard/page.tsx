@@ -4,16 +4,17 @@
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { motion } from "framer-motion";
+import { Plus, LogIn, Sparkles, Code2 } from "lucide-react";
+import { EnhancedButton } from "@/components/ui/enhanced-button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+  EnhancedCard,
+  EnhancedCardContent,
+  EnhancedCardDescription,
+  EnhancedCardHeader,
+  EnhancedCardTitle,
+} from "@/components/ui/enhanced-card";
+import { EnhancedInput } from "@/components/ui/enhanced-input";
 import { useToast } from "@/hooks/use-toast";
 
 type Room = {
@@ -90,73 +91,148 @@ export default function DashboardPage() {
 
   if (status === "loading") {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        Loading...
+      <div className="flex items-center justify-center min-h-screen bg-background">
+        <div className="text-center space-y-4">
+          <div className="animate-spin w-12 h-12 border-4 border-primary border-t-transparent rounded-full mx-auto" />
+          <p className="text-muted-foreground">Loading dashboard...</p>
+        </div>
       </div>
     );
   }
 
   if (status === "authenticated") {
     return (
-      <div className="bg-zinc-950 text-white min-h-[calc(100vh-80px)] flex flex-col items-center justify-center p-4">
-        <h1 className="text-3xl font-bold mb-8 text-center">Dashboard</h1>
-        <Card className="w-[400px] bg-slate-900 border-slate-800">
-          <CardHeader>
-            <CardTitle>Join or Create Room</CardTitle>
-            <CardDescription>
-              Enter a Room ID to join or create a new one.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="username">Username</Label>
-                <Input
-                  id="username"
-                  placeholder="Enter your username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  disabled={isLoading}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="room-id">Room ID</Label>
-                <Input
-                  id="room-id"
-                  placeholder="Enter Room ID"
-                  value={roomId}
-                  onChange={(e) => setRoomId(e.target.value)}
-                  disabled={isLoading}
-                />
-              </div>
-              <Button
-                onClick={handleJoinRoom}
-                className="w-full"
-                disabled={isLoading || !roomId || !username}
-              >
-                {isLoading ? "Joining..." : "Join Room"}
-              </Button>
-              <Button
-                variant="secondary"
-                onClick={handleCreateRoom}
-                className="w-full"
-                disabled={isLoading || !username}
-              >
-                {isLoading ? "Creating..." : "Create New Room"}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen bg-background relative overflow-hidden">
+        {/* Animated Background */}
+        <div className="absolute inset-0 -z-10">
+          <div className="absolute inset-0 bg-linear-to-br from-primary/5 via-secondary/5 to-transparent" />
+          <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute bottom-1/4 left-1/4 w-96 h-96 bg-secondary/10 rounded-full blur-3xl animate-pulse delay-1000" />
+        </div>
+
+        <div className="container mx-auto px-4 py-20 flex items-center justify-center min-h-screen">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5 }}
+            className="w-full max-w-xl"
+          >
+            <EnhancedCard className="overflow-hidden">
+              <EnhancedCardHeader className="text-center space-y-4 pb-8">
+                <div className="flex justify-center">
+                  <div className="w-16 h-16 rounded-xl bg-linear-to-br from-primary to-secondary flex items-center justify-center">
+                    <Code2 className="h-8 w-8 text-white" />
+                  </div>
+                </div>
+                <EnhancedCardTitle className="text-4xl">
+                  Code Together, Create Forever
+                </EnhancedCardTitle>
+                <EnhancedCardDescription className="text-lg">
+                  Join an existing room or start a new collaboration session
+                </EnhancedCardDescription>
+              </EnhancedCardHeader>
+
+              <EnhancedCardContent className="space-y-8">
+                {/* Username Input */}
+                <div className="space-y-2">
+                  <EnhancedInput
+                    label="Your Username"
+                    placeholder="Enter your username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    disabled={isLoading}
+                    helperText="This is how others will see you in the room"
+                  />
+                </div>
+
+                {/* Room ID Input */}
+                <div className="space-y-2">
+                  <EnhancedInput
+                    label="Room ID (Optional)"
+                    placeholder="Enter Room ID to join existing room"
+                    value={roomId}
+                    onChange={(e) => setRoomId(e.target.value)}
+                    disabled={isLoading}
+                  />
+                </div>
+
+                {/* Action Buttons */}
+                <div className="space-y-4">
+                  <EnhancedButton
+                    onClick={handleJoinRoom}
+                    variant="primary"
+                    size="lg"
+                    disabled={isLoading || !roomId || !username}
+                    loading={isLoading}
+                    fullWidth
+                  >
+                    <LogIn className="h-5 w-5" />
+                    Join Existing Room
+                  </EnhancedButton>
+
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-border" />
+                    </div>
+                    <div className="relative flex justify-center text-sm">
+                      <span className="bg-card px-4 text-muted-foreground font-medium">
+                        OR
+                      </span>
+                    </div>
+                  </div>
+
+                  <EnhancedButton
+                    onClick={handleCreateRoom}
+                    variant="outline"
+                    size="lg"
+                    disabled={isLoading || !username}
+                    loading={isLoading}
+                    fullWidth
+                  >
+                    <Plus className="h-5 w-5" />
+                    Create New Room
+                  </EnhancedButton>
+                </div>
+
+                {/* Features List */}
+                <div className="pt-6 space-y-3 border-t border-border">
+                  <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                      <Sparkles className="h-4 w-4 text-primary" />
+                    </div>
+                    <span>AI-powered code assistance and debugging</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                    <div className="w-8 h-8 rounded-lg bg-secondary/10 flex items-center justify-center shrink-0">
+                      <Code2 className="h-4 w-4 text-secondary" />
+                    </div>
+                    <span>Real-time collaboration with live cursors</span>
+                  </div>
+                </div>
+              </EnhancedCardContent>
+            </EnhancedCard>
+          </motion.div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-80px)] text-center">
-      <h1 className="text-4xl font-bold mb-4">Welcome to CodeStream v2</h1>
-      <p className="text-xl text-muted-foreground">
-        Please sign in to join or create a room.
-      </p>
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="text-center space-y-6"
+      >
+        <div className="w-20 h-20 rounded-2xl bg-linear-to-br from-primary to-secondary flex items-center justify-center mx-auto">
+          <Code2 className="h-10 w-10 text-white" />
+        </div>
+        <h1 className="text-4xl md:text-5xl font-bold">Welcome to CodeStream</h1>
+        <p className="text-xl text-muted-foreground max-w-md">
+          Please sign in to join or create a collaborative coding room
+        </p>
+      </motion.div>
     </div>
   );
 }
