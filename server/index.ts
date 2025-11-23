@@ -15,10 +15,17 @@ const app = express();
 app.use(cors());
 
 const httpServer = createServer(app);
+
+// Get allowed origins from environment or use defaults
+const allowedOrigins = process.env.ALLOWED_ORIGINS 
+  ? process.env.ALLOWED_ORIGINS.split(',')
+  : ["http://localhost:3000", "http://localhost:3001"];
+
 const io = new Server(httpServer, {
   cors: {
-    origin: "http://localhost:3000",
+    origin: allowedOrigins,
     methods: ["GET", "POST"],
+    credentials: true,
   },
 });
 
@@ -69,7 +76,7 @@ io.on('connection', (socket) => {
   });
 });
 
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 httpServer.listen(PORT, () => {
-  console.log(`Socket.IO server running on http://localhost:${PORT}`);
+  console.log(`Socket.IO server running on port ${PORT}`);
 });

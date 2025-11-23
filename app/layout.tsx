@@ -52,7 +52,7 @@ export default async function RootLayout({
             </header>
 
             {/* Main Page Content */}
-            <main className="flex-grow">{children}</main>
+            <main className="grow">{children}</main>
           </div>
         </Providers>
         <Toaster />

@@ -1,24 +1,18 @@
 services:
-  # Frontend - Next.js app on Vercel (not needed in render.yaml, but documenting for reference)
-  # Deploy frontend to Vercel instead for better performance
-
   # Backend - Node.js Socket.IO Server
   - type: web
-    name: codestream-backend
-    env: node
-    plan: free
-    buildCommand: "npm install"
-    startCommand: "npm run start"
+    name: codestream-socket-server
+    runtime: node
+    buildCommand: "cd server && npm install && npm run build"
+    startCommand: "cd server && npm run start"
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
         value: 5000
+      - key: ALLOWED_ORIGINS
+        value: https://your-frontend-url.vercel.app,https://www.your-frontend-url.vercel.app
 
   # Database - PostgreSQL
-  - type: pgsql
-    name: codestream-db
-    plan: free
-    ipAllowList: [] # Allow all IPs (configure more restrictively in production)
-    initializer: |
-      CREATE DATABASE codestream;
+  # Note: Create this separately in Render Dashboard for better control
+  # Then add the DATABASE_URL to your Vercel environment variables

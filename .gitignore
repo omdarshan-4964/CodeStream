@@ -41,3 +41,11 @@ yarn-error.log*
 next-env.d.ts
 
 /lib/generated/prisma
+
+# Documentation files (internal use only)
+DEPLOYMENT.md
+FIXES_APPLIED.md
+
+# Server build output
+/server/dist
+/server/node_modules

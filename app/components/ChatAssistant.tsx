@@ -107,7 +107,7 @@ export function ChatAssistant({
         <SheetHeader>
           <SheetTitle>🤖 Gemini Assistant</SheetTitle>
         </SheetHeader>
-        <ScrollArea className="flex-grow pr-4">
+        <ScrollArea className="grow pr-4">
           <div className="space-y-4 flex flex-col">
             {messages.map((msg, index) => (
               <div

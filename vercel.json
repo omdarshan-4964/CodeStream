@@ -1,11 +1,20 @@
 {
-  "buildCommand": "npm run build",
-  "outputDirectory": ".next",
+  "buildCommand": "prisma generate && npm run build",
   "framework": "nextjs",
   "rewrites": [
     {
-      "source": "/api/socket",
-      "destination": "https://codestream-socket-server.onrender.com/socket.io/"
+      "source": "/api/:path*",
+      "destination": "/api/:path*"
     }
-  ]
+  ],
+  "env": {
+    "DATABASE_URL": "@database_url",
+    "GOOGLE_CLIENT_ID": "@google_client_id",
+    "GOOGLE_CLIENT_SECRET": "@google_client_secret",
+    "NEXTAUTH_SECRET": "@nextauth_secret",
+    "NEXTAUTH_URL": "@nextauth_url",
+    "JUDGE0_API_KEY": "@judge0_api_key",
+    "GEMINI_API_KEY": "@gemini_api_key",
+    "NEXT_PUBLIC_SOCKET_URL": "@next_public_socket_url"
+  }
 }

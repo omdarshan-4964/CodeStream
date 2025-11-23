@@ -67,7 +67,8 @@ export default function RoomClient({ roomId, session }: RoomClientProps) {
     // --- FIX 3: Add session guard to prevent crash ---
     if (!session?.user) return;
 
-    const newSocket = io("http://localhost:5000");
+    const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:5000";
+    const newSocket = io(socketUrl);
     setSocket(newSocket);
     newSocket.emit("join-room", roomId, session.user.name?.split(" ")[0] ?? "Guest");
 
@@ -162,7 +163,7 @@ export default function RoomClient({ roomId, session }: RoomClientProps) {
       {/* 1. Left Sidebar (Team Members) */}
       <aside className="w-1/5 bg-slate-950 text-white p-4 flex flex-col">
         <h2 className="text-lg font-semibold mb-4">Team Members</h2>
-        <div className="flex-grow">
+        <div className="grow">
           <ul>
             {teamMembers.map((member) => (
               <li
@@ -256,7 +257,7 @@ export default function RoomClient({ roomId, session }: RoomClientProps) {
         </div>
 
         {/* Editor Area */}
-        <div className="flex-grow bg-slate-900 text-white overflow-hidden">
+        <div className="grow bg-slate-900 text-white overflow-hidden">
           <CodeMirror
             value={code}
             onChange={onCodeChange}
@@ -275,7 +276,7 @@ export default function RoomClient({ roomId, session }: RoomClientProps) {
           <div className="w-1/2 p-2 border-r border-slate-800 flex flex-col">
             <h3 className="font-semibold mb-2">Input</h3>
             <textarea
-              className="w-full flex-grow bg-slate-900 rounded p-2 resize-none"
+              className="w-full grow bg-slate-900 rounded p-2 resize-none"
               placeholder="Enter input for your program..."
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -283,7 +284,7 @@ export default function RoomClient({ roomId, session }: RoomClientProps) {
           </div>
           <div className="w-1/2 p-2 flex flex-col">
             <h3 className="font-semibold mb-2">Output</h3>
-            <pre className="w-full flex-grow bg-slate-900 rounded p-2 overflow-y-auto">
+            <pre className="w-full grow bg-slate-900 rounded p-2 overflow-y-auto">
               {output}
             </pre>
           </div>

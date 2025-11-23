@@ -1,10 +1,10 @@
 // lib/auth.ts
 
 import { PrismaAdapter } from "@auth/prisma-adapter";
-import { PrismaClient } from "@prisma/client";
 import NextAuth, { type AuthOptions, type DefaultSession } from "next-auth";
 import { getServerSession } from "next-auth/next";
 import Google from "next-auth/providers/google";
+import { prisma } from "@/lib/prisma";
 
 // This adds the 'id' property to the session user type
 declare module "next-auth" {
@@ -14,9 +14,6 @@ declare module "next-auth" {
     } & DefaultSession["user"];
   }
 }
-
-// Initialize Prisma
-const prisma = new PrismaClient();
 
 // Runtime environment variable check
 if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {

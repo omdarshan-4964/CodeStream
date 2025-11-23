@@ -1,9 +1,7 @@
 // app/api/rooms/[roomId]/join/route.ts
 import { getAuthSession } from "@/lib/auth";
-import { PrismaClient } from "@prisma/client";
 import { NextResponse } from "next/server";
-
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/prisma";
 
 export async function POST(
   req: Request,
@@ -40,7 +38,7 @@ export async function POST(
     // Check if user is already a participant or owner
     const isOwner = room.owner.id === session.user.id;
     const isAlreadyParticipant = room.participants.some(
-      (p) => p.id === session.user.id
+      (p: { id: string }) => p.id === session.user.id
     );
 
     if (isOwner) {
