@@ -11,7 +11,7 @@ import { Toaster } from "@/components/ui/toaster";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "CodeStream v2",
+  title: "CodeStream",
   description: "Collaborative Code Editor",
 };
 
@@ -37,7 +37,7 @@ export default async function RootLayout({
             {/* Simple Header */}
             <header className="w-full border-b bg-background">
               <div className="container mx-auto flex h-16 items-center justify-between p-4">
-                <div className="font-bold text-lg">CodeStream v2</div>
+                <div className="font-bold text-lg">CodeStream</div>
                 
                 {session?.user ? (
                   <UserNav
