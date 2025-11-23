@@ -3,8 +3,8 @@ services:
   - type: web
     name: codestream-socket-server
     runtime: node
-    buildCommand: "cd server && npm install && npm run build"
-    startCommand: "cd server && npm run start"
+    buildCommand: "cd server && npm install && npx tsc"
+    startCommand: "cd server && node dist/index.js"
     envVars:
       - key: NODE_ENV
         value: production
