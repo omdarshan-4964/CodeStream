@@ -31,7 +31,11 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # env files (can opt-in for committing if needed)
-.env*
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
 # vercel
 .vercel
@@ -49,3 +53,42 @@ FIXES_APPLIED.md
 # Server build output
 /server/dist
 /server/node_modules
+/server/.env
+/server/.env.local
+
+# IDE and Editor files
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+*.sublime-project
+*.sublime-workspace
+
+# OS files
+Thumbs.db
+.DS_Store
+*.log
+
+# Build files
+dist/
+.next/
+out/
+build/
+
+# Prisma
+prisma/migrations/*_migration.sql
+*.db
+*.db-journal
+
+# Package manager lock files (optional - uncomment if you want to ignore)
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
