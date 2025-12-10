@@ -325,7 +325,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## 📧 Contact
 
-**Omdarshan Shindepati**  
+**Omdarshan Shinde Patil**  
 GitHub: [@omdarshan-4964](https://github.com/omdarshan-4964)
 
 ---
