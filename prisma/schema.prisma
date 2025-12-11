@@ -43,6 +43,7 @@ model User {
   email         String?   @unique
   emailVerified DateTime?
   image         String?
+  password      String?   // For email/password authentication
   accounts      Account[]
   sessions      Session[]
 
@@ -61,6 +62,7 @@ model VerificationToken {
 model Room {
   id        String    @id @default(cuid())
   name      String
+  mode      String    @default("code") // "code" or "interview"
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 

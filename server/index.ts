@@ -22,7 +22,8 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
   : [
       "http://localhost:3000", 
       "http://localhost:3001",
-      "https://code-stream-rho.vercel.app", // Your production Vercel URL
+      "https://code-stream-rho.vercel.app", // Production Vercel URL
+      "https://codestreampro.vercel.app", // Alternative Vercel deployment
       /\.vercel\.app$/ // Allow all Vercel preview deployments
     ];
 
