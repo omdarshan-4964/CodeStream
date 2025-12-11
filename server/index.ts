@@ -19,7 +19,12 @@ const httpServer = createServer(app);
 // Get allowed origins from environment or use defaults
 const allowedOrigins = process.env.ALLOWED_ORIGINS 
   ? process.env.ALLOWED_ORIGINS.split(',')
-  : ["http://localhost:3000", "http://localhost:3001"];
+  : [
+      "http://localhost:3000", 
+      "http://localhost:3001",
+      "https://code-stream-rho.vercel.app", // Your production Vercel URL
+      /\.vercel\.app$/ // Allow all Vercel preview deployments
+    ];
 
 const io = new Server(httpServer, {
   cors: {
